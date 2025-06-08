@@ -1,0 +1,6 @@
+xtc_file = traj.xtc
+monomers_per_molecule = 100
+rcut = 1.0
+clustcutoff = 0.52
+p2thresh = 0.4
+frame_skip = 1000

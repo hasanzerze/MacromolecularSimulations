@@ -1,0 +1,118 @@
+## Crystalline Cluster Analysis from XTC Trajectories
+## Author: Hasan Zerze, Ph.D.
+## Email: hasanzerze@gmail.com
+## Date: June the 6th, 2025
+
+################################
+## Overview
+################################
+
+-This C++ program analyzes molecular dynamics trajectories
+ stored in XTC format to identify crystalline regions 
+ within polymer chains.
+
+-It calculates the bond order parameter ⟨P₂⟩
+ between bonds of polymer molecules and
+ performs clustering of crystalline segments
+ based on spatial proximity.
+
+-The method is first published in the paper by
+ Peng Yi and Gregory C. Rutledge (J. Chem. Phys., 135, 024903, 2011)
+
+-The output includes:
+	- A time-resolved crystalline fraction (`crystallinity.out`)
+	- Per-frame `.xyz` file with cluster labels (`clustered.xyz`)
+	- Histogram of ⟨P₂⟩ values (`hist.out`)
+
+################################
+## Features
+################################
+
+- Calculates bond vectors using internal monomers of each molecule.
+- Computes ⟨P₂⟩ between neighboring bonds.
+- Identifies crystalline bonds using a user-defined ⟨P₂⟩ threshold.
+- Performs clustering of crystalline bonds based on inter-bond distances.
+- Outputs cluster assignments and crystalline fraction over time.
+
+################################
+## Input Files
+################################
+
+## 1. **XTC Trajectory File**
+A GROMACS `.xtc` file (traj.xtc) containing atomic positions.
+
+## 2. **Input Text File**
+A plain text file (`input_param.dat`) specifying simulation parameters:
+
+
+**Descriptions:**
+- `xtc_file`: Path to the `.xtc` file
+- `monomers_per_molecule`: Number of monomers in each polymer chain
+- `rcut`: Cutoff distance (in nm) for calculating bond ⟨P₂⟩
+- `clustcutoff`: Distance cutoff to determine whether two bonds are in the same cluster
+- `p2thresh`: Threshold for ⟨P₂⟩ above which a bond is considered crystalline
+- `frame_skip`: Interval between frames to analyze
+
+**Example entries in `input_param.dat`**
+xtc_file = traj.xtc
+monomers_per_molecule = 100
+rcut = 1.0
+clustcutoff = 0.52
+p2thresh = 0.4
+frame_skip = 1000
+
+################################
+## Compilation:
+################################
+
+Make sure you have the XDRFILE library installed (used to read `.xtc` files).
+Then, to compile the code, enter the following command:
+
+g++ -o p2 p2.cpp -I./libxdrfile/include -L./libxdrfile/build/lib -lxdrfile
+
+################################
+### Usage:
+#################################
+
+./p2 input_param.dat
+
+################################
+### Output files:
+################################
+
+1. `crystallinity.out`
+Contains the time (in ps) and the crystalline fraction of bonds at each analyzed frame.
+
+2. `clustered.xyz`
+An extended XYZ file where each atom is labeled by the cluster it belongs to
+(e.g., c1, c2, ...). Atoms not part of a cluster are labeled as c0.
+c1 is for the atoms in the largest cluster,
+c2 is for the atoms in the second largest, etc.
+
+3. stdout
+Prints histogram of ⟨P₂⟩ values and frame-by-frame logs, including cluster sizes.
+
+################################
+### Notes
+################################
+
+-Only internal bonds (excluding first and last monomer of each molecule) are used.
+-Periodic boundary conditions are handled using the Minimum Image Convention (MIC).
+-Clustering is done using depth-first search (DFS) based on distance between bonds.
+
+################################
+### Dependencies
+################################
+
+- XDRFILE (part of GROMACS or standalone from https://github.com/gromacs/xdrfile)
+- C++11 or later
+
+################################
+### Cite:
+#################################
+
+This project is distributed for academic use.
+Please consider citing the following papers, if you use it in your work:
+
+1. Peng Yi and Gregory C. Rutledge (J. Chem. Phys., 135, 024903, 2011)
+
