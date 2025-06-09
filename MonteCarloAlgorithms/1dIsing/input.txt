@@ -1,0 +1,5 @@
+N = 500       # Number of spins
+J = 1.0       # Coupling constant
+h = 0.0       # External field
+T = 2.5       # Temperature
+MC_STEPS = 100000  # Monte Carlo steps
