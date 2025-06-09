@@ -1,0 +1,4 @@
+Nchain		100   ! Number of chains
+Natom_per_chain 100   ! Number of beads per chain
+bondlength	1.0   ! bead-to-bead bond distance
+Lbox		50.0  ! Cubic box length

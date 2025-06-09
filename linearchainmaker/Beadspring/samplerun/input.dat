@@ -1,0 +1,52 @@
+units           lj
+
+dimension       3
+boundary        p p p
+
+atom_style      molecular
+
+read_data       file.data
+
+pair_style      lj/smooth/linear 3.0
+pair_coeff      1 1 1.0 1.0 3.0
+pair_modify     tail yes
+
+special_bonds   fene
+special_bonds   lj 0.0 1.0 1.0
+
+bond_style      fene
+bond_coeff      1 30.0 1.5 1.0 1.0
+
+neighbor        0.5 bin
+
+min_style	sd
+minimize        1.0e-5 1.0e-7 10000 100000
+
+velocity        all create 1.0 386933 dist gaussian
+timestep        0.001
+reset_timestep  0
+
+run_style       verlet
+fix             1 all nvt temp 1.0 1.0 10.0
+thermo          1000
+thermo_style    custom step temp press pe ke etotal epair
+
+dump            VMD0 all xyz 50000000 nvt.xyz
+dump            VMD1 all xtc 10000 nvt.xtc
+
+run		1000000
+
+write_restart   restart_nvt.bin
+
+undump		VMD0
+undump		VMD1
+unfix		1
+reset_timestep  0
+
+dump            VMD1 all xtc 10000 npt.xtc
+
+fix		1 all npt temp 1.0 1.0 10.0 iso 1.0 1.0 2.0
+
+run		1000000
+
+write_restart   restart_npt.bin
