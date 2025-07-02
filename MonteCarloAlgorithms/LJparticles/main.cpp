@@ -4,24 +4,61 @@
 #include <cstdlib>
 #include <ctime>
 #include <algorithm>
+#include <fstream>
+#include <sstream>
+#include <map>
+
 using namespace std;
 
-// Constants
-const double LJ_EPSILON = 1.0;
-const double LJ_SIGMA = 1.0;
-const double sigma3 = LJ_SIGMA * LJ_SIGMA * LJ_SIGMA;
-const double sigma6 = sigma3 * sigma3;
-const double sigma12 = sigma6 * sigma6;
-const double temperature = 0.85;
-const double k_B = 1.0; // Boltzmann's constant
+int NUM_PARTICLES;
+int NUM_STEPS;
+double BOX_LENGTH;
+double BOX_VOLUME;
+double density;
+double LJ_EPSILON;
+double LJ_SIGMA;
+double sigma3;
+double sigma6;
+double sigma12;
+double temperature;
+double k_B;
+double RCUT;
+double STEP_SIZE;
+int NUM_CELLS;
 
-const double BOX_LENGTH = 8.22; // Simulation box size
-const double BOX_VOLUME = BOX_LENGTH * BOX_LENGTH * BOX_LENGTH;
-const int NUM_PARTICLES = 500;  // Number of particles
-const double density = NUM_PARTICLES / BOX_VOLUME;
-const double RCUT = 3.0 * LJ_SIGMA; // LJ cutoff
-#define NUM_CELLS (static_cast<int>(BOX_LENGTH / RCUT))
-const double STEP_SIZE = 0.1;  // Define the step size
+void loadConfigFromFile(const std::string& filename) {
+    std::ifstream file(filename);
+    if (!file) {
+        std::cerr << "Error: Could not open the input file " << filename << std::endl;
+        std::exit(1);
+    }
+
+    std::map<std::string, double> constants;
+    std::string key;
+    double value;
+
+    while (file >> key >> value) {
+        constants[key] = value;
+    }
+
+    // Assign constants to namespace variables
+    if (constants.count("LJ_EPSILON"))    LJ_EPSILON = constants["LJ_EPSILON"];
+    if (constants.count("LJ_SIGMA"))      LJ_SIGMA = constants["LJ_SIGMA"];
+    if (constants.count("k_B"))    k_B = constants["k_B"];
+    if (constants.count("NUM_PARTICLES")) NUM_PARTICLES = static_cast<int>(constants["NUM_PARTICLES"]);
+    if (constants.count("NUM_STEPS")) NUM_STEPS = static_cast<int>(constants["NUM_STEPS"]);
+    if (constants.count("BOX_LENGTH"))    BOX_LENGTH = constants["BOX_LENGTH"];
+    if (constants.count("RCUT"))          RCUT = constants["RCUT"];
+    if (constants.count("STEP_SIZE"))     STEP_SIZE = constants["STEP_SIZE"];
+    if (constants.count("TEMPERATURE"))   temperature = constants["TEMPERATURE"];
+
+    BOX_VOLUME = BOX_LENGTH * BOX_LENGTH * BOX_LENGTH;
+    density = NUM_PARTICLES / BOX_VOLUME;
+    sigma3 = LJ_SIGMA * LJ_SIGMA * LJ_SIGMA;
+    sigma6 = sigma3 * sigma3;
+    sigma12 = sigma6 * sigma6;
+    NUM_CELLS = static_cast<int>(BOX_LENGTH / RCUT);
+}
 
 struct Vector3d {
     double x, y, z;
@@ -88,9 +125,23 @@ private:
     double temperature;
     int numAcceptedMoves = 0; // Track number of accepted moves
     int numAttemptedMoves = 0; // Track number of attempted moves
-    
+    std::ofstream thermoFile;
 public:
-    Simulation(double temp) : temperature(temp) { initializeParticles(); }
+    Simulation(double temp) : temperature(temp) {
+        thermoFile.open("thermo_output.txt");
+        if (!thermoFile) {
+            std::cerr << "Error opening thermo output file.\n";
+            std::exit(1);
+        }
+        initializeParticles();
+    }
+    ~Simulation() {
+        if (thermoFile.is_open()) thermoFile.close();
+    }
+
+    void printThermo(int step);
+
+//    Simulation(double temp) : temperature(temp) { initializeParticles(); }
     void initializeParticles(); // Setup initial particle positions
     vector<int> findNeighbors(int index); // Find neighbors within cutoff
     double computeLocalEnergy(int index); // Compute LJ energy for a particle
@@ -112,6 +163,24 @@ public:
     vector<vector<int>> cellList; // Stores particle indices for each cell
     void buildCellList();
 };
+
+void Simulation::printThermo(int step) {
+    double totalEnergy = computeTotalEnergy();
+    double pressure = computeVirialPressure();
+    double acceptanceRatio = static_cast<double>(numAcceptedMoves) / numAttemptedMoves;
+
+    thermoFile << step << " "
+               << totalEnergy << " "
+               << pressure << " "
+               << acceptanceRatio << " "
+               << temperature << " "
+               << density << "\n";
+
+    // Optional: flush periodically
+    if (step % 100000 == 0) {
+        thermoFile.flush();
+    }
+}
 
 void Simulation::applyPeriodicBoundary(double& x, double& y, double& z) {
     x -= BOX_LENGTH * floor(x / BOX_LENGTH);
@@ -236,7 +305,6 @@ vector<int> Simulation::findNeighbors(int index) {
 }
 
 void Simulation::attemptMove(int index) {
-
     Vector3d randomVector = (Vector3d::RandomHalf()) * STEP_SIZE;
 
     Particle& p = particles[index];
@@ -354,6 +422,14 @@ void Simulation::run(int numSteps) {
     cout << "Running Monte Carlo simulation for " << numSteps << " steps...\n";
     double Psum = 0.;
     int nsample = 0;
+
+    thermoFile << "#Step "
+               << "TotalEnergy "
+               << "Pressure "
+               << "AcceptanceRatio "
+               << "Temperature "
+               << "Density" << "\n";
+
     // Main Metropolis loop
     for (int step = 0; step < numSteps; ++step) {
         // Choose a random particle to move
@@ -368,6 +444,8 @@ void Simulation::run(int numSteps) {
         	double acceptanceRatio = static_cast<double>(numAcceptedMoves) / numAttemptedMoves;
 		Psum += pressure;
 		nsample += 1;
+
+		printThermo(step);
 
         	cout << "Step " << step << " - Total Energy: " << totalEnergy 
 		     << ", Acceptance Ratio = " << acceptanceRatio
@@ -443,6 +521,8 @@ void Simulation::printParticles() {
 
 // Main function
 int main() {
+    loadConfigFromFile("input.dat");
+
     srand(time(0)); // Seed random number generator
 
     Simulation mcSim(temperature);
@@ -451,7 +531,7 @@ int main() {
 
     mcSim.buildCellList(); // Build cell list before neighbor search
 
-    mcSim.run(1000000); // Run simulation for 1,000,000 steps
+    mcSim.run(NUM_STEPS); // Run simulation for 1,000,000 steps
     
     return 0;
 }

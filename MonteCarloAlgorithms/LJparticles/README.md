@@ -28,13 +28,13 @@ This project implements a canonical ensemble (NVT) **Monte Carlo simulation** of
 Compile using any C++ compiler. For example:
 
 ```bash
-g++ -std=c++11 -O2 -o lj_mc_sim main.cpp
+g++ -std=c++17 -O2 -o main main.cpp
 
 ```
 ## Running the Simulation:
 
 ```bash
-./lj_mc_sim
+./main input.dat
 ```
 
 ## Parameters:
@@ -49,6 +49,17 @@ temperature	Simulation temperature (in LJ units)	0.85
 LJ_EPSILON	LJ energy scale	1.0
 LJ_SIGMA	LJ length scale	1.0
 ```
+##Example input file input.dat:
+LJ_EPSILON 1.0
+LJ_SIGMA 1.0
+TEMPERATURE 0.85
+k_B 1.0
+BOX_LENGTH 8.22
+NUM_PARTICLES 500
+NUM_STEPS 10000000
+RCUT 3.0
+STEP_SIZE 0.1
+
 ## Code Structure:
 
 main() initializes the simulation and runs it.
