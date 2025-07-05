@@ -20,7 +20,7 @@ This project implements a canonical ensemble (NVT) **Monte Carlo simulation** of
 
 ### Prerequisites
 
-- C++ compiler supporting C++11 or higher
+- C++ compiler supporting C++17 or higher
 - Standard C++ libraries (no external dependencies)
 
 ### Building the Code

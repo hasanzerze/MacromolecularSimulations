@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <map>
+#include <unordered_set>
 
 using namespace std;
 
@@ -167,6 +168,7 @@ public:
 void Simulation::printThermo(int step) {
     double totalEnergy = computeTotalEnergy();
     double pressure = computeVirialPressure();
+    double longrangecorrection = computeLongRangeCorrectionEnergy();
     double acceptanceRatio = static_cast<double>(numAcceptedMoves) / numAttemptedMoves;
 
     thermoFile << step << " "
@@ -174,6 +176,7 @@ void Simulation::printThermo(int step) {
                << pressure << " "
                << acceptanceRatio << " "
                << temperature << " "
+               << longrangecorrection << " "
                << density << "\n";
 
     // Optional: flush periodically
@@ -268,7 +271,8 @@ void Simulation::buildCellList() {
 }
 
 vector<int> Simulation::findNeighbors(int index) {
-    vector<int> neighbors;
+    std::unordered_set<int> neighborSet;
+//    vector<int> neighbors;
     double rcutSquared = RCUT * RCUT;
 
     // Compute cell indices for target particle
@@ -294,14 +298,13 @@ vector<int> Simulation::findNeighbors(int index) {
 
                     double distanceSquared = dr.x * dr.x + dr.y * dr.y + dr.z * dr.z;
                     if (distanceSquared < rcutSquared) {
-                        neighbors.push_back(j);
+                          neighborSet.insert(j); // Prevent duplicates
                     }
                 }
             }
         }
     }
-
-    return neighbors;
+    return vector<int>(neighborSet.begin(), neighborSet.end());
 }
 
 void Simulation::attemptMove(int index) {
@@ -412,10 +415,12 @@ double Simulation::computeTotalEnergy() {
     	totalEnergy += computeLocalEnergy(i);
     }
 
+    totalEnergy = totalEnergy / 2.0; // We divided by 2 to avoid double counting of pairs
+
     // Apply long-range correction
     totalEnergy += computeLongRangeCorrectionEnergy();
 
-    return totalEnergy / 2.;	// We divided by 2 to avoid double counting of pairs
+    return totalEnergy; 
     }
 
 void Simulation::run(int numSteps) {
@@ -428,6 +433,7 @@ void Simulation::run(int numSteps) {
                << "Pressure "
                << "AcceptanceRatio "
                << "Temperature "
+               << "LongRangeCorrection "
                << "Density" << "\n";
 
     // Main Metropolis loop
