@@ -1,0 +1,13 @@
+Simulation Parameters:
+Lattice Size: 500
+Chain Length: 80
+Epsilon: -1
+Number of Trials: 20000
+Random Seed: 42
+Unbiased average Ree2: 78.543
+Unbiased average Rg2: 19.7883
+Successful chains: 9821 / 20000
+Average Rosenbluth weight: 1.28149e+81 ± 2.09737e+82
+Average number of contacts: 46.4574
+Biased average end-to-end distance squared: 164.915
+Biased average radius of gyration squared: 28.3515

@@ -36,6 +36,10 @@ README.md # This file
 - Each contact is counted once (not double-counted).
 - Observables are averaged only over successful chains.
 
+## Compilation
+
+g++ -std=c++17 main.cpp config.cpp lattice.cpp chain.cpp -o rosenbluth
+
 ## Author
 
 Hasan Zerze (with substantial help from ChatGPT)

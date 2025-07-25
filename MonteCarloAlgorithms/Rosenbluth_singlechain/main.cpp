@@ -3,6 +3,7 @@
 #include "config.h"
 #include "lattice.h"
 #include "chain.h"
+#include <fstream>
 
 int main() {
     config::loadConfigFromFile("input.dat");
@@ -22,8 +23,11 @@ int main() {
     double totalWeightSquared = 0.0;
     double totalContacts = 0.0;
     int success = 0;
+    int unsuccessful = 0;
     double totalRee2 = 0.0;
     double totalRg2 = 0.0;
+    double Ree2_weighted_sum = 0.0;
+    double Rg2_weighted_sum = 0.0;
 
     for (int trial = 0; trial < config::NUM_TRIALS; ++trial) {
         Chain chain(config::CHAIN_LENGTH);
@@ -69,16 +73,28 @@ int main() {
             rg2 /= positions.size();
             totalRg2 += rg2;
 
-	} //else {
-        // Print configuration of failed chain
-	//    std::cout << "Trial " << trial << " failed to grow full chain.\n";
-        //    const auto& positions = chain.getPositions();
-        //    std::cout << "Chain length reached: " << positions.size() << "\n";
-        //    for (size_t i = 0; i < positions.size(); ++i) {
-        //        std::cout << "  Bead " << i << ": (" << positions[i].x << ", " << positions[i].y << ")\n";
-        //    }
-        //    std::cout << "-----\n";
-        //}
+            Ree2_weighted_sum += weight * ree2;
+            Rg2_weighted_sum  += weight * rg2;
+
+	    if (success == 1) {
+	    	std::ofstream out("chain_coords.txt");
+	    	for (const auto& pos : chain.getPositions()) {
+	        	out << pos.x << " " << pos.y << "\n";
+	    	}
+	    	out.close();
+	    }
+
+	} else {
+	    unsuccessful++;
+        // Print configuration of an example failed chain
+            if ( unsuccessful == 1) {
+            	std::ofstream out("failedchain_coords.txt");
+                for (const auto& pos : chain.getPositions()) {
+                        out << pos.x << " " << pos.y << "\n";
+                }
+                out.close();
+	    }
+        }
     }
 
     if (success > 0) {
@@ -86,12 +102,16 @@ int main() {
         double varWeight = (totalWeightSquared / success) - (avgWeight * avgWeight);
         double stdWeight = std::sqrt(varWeight);
         double avgContacts = totalContacts / success;
+	double Ree2_avg = Ree2_weighted_sum / totalWeight;
+	double Rg2_avg  = Rg2_weighted_sum  / totalWeight;
 
+	std::cout << "Unbiased average Ree2: " << Ree2_avg << "\n";
+	std::cout << "Unbiased average Rg2: "  << Rg2_avg  << "\n";
         std::cout << "Successful chains: " << success << " / " << config::NUM_TRIALS << "\n";
         std::cout << "Average Rosenbluth weight: " << avgWeight << " ± " << stdWeight << "\n";
         std::cout << "Average number of contacts: " << avgContacts << "\n";
-	std::cout << "Average end-to-end distance squared: " << totalRee2 / success << "\n";
-	std::cout << "Average radius of gyration squared: " << totalRg2 / success << "\n";
+	std::cout << "Biased average end-to-end distance squared: " << totalRee2 / success << "\n";
+	std::cout << "Biased average radius of gyration squared: " << totalRg2 / success << "\n";
 
     } else {
         std::cout << "All trials failed. Try increasing lattice size or decreasing chain length.\n";
