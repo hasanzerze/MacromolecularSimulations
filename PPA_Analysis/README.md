@@ -78,4 +78,23 @@ Once the input.dat file is prepared as above, run using the following command:
 ./run_ppa
 
 ################################
+## Observables computed
+################################
+
+Primitive Path Length, Lpp
+Mean Squared End-to-End Distance, Ree2
+Kuhn length of the primitive chain, app = Ree2 / Lpp
+Bond distance of the primitive chain, bpp = Lpp / natoms_per_chain
+Entanglement Length, Ne = app / bpp
+
+################################
+## References
+################################
+
+Everaers, R., Sukumaran, S. K., Grest, G. S., Svaneborg, C., Sivasubramanian, A., & Kremer, K. (2004). Rheology and microscopic topology of entangled polymeric liquids. Science, 303(5659), 823–826.
+
+Bitzek, E., Koskinen, P., Gähler, F., Moseler, M., & Gumbsch, P. (2006). Structural Relaxation Made Simple. Physical Review Letters, 97(17), 170201. (for FIRE algorithm)
+
+################################
+
 
